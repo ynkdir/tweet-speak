@@ -23,6 +23,9 @@ var bing_appid = '7E4F352C80692687D39E6CD42998104C5F79281C';
 var rowdelay = 3000;
 var requestdelay = 15000;
 
+var searchid = 0;
+var audio = null;
+
 function timeout(msec) {
   var d = $.Deferred();
   setTimeout(function(){ d.resolve(); }, msec);
@@ -30,11 +33,17 @@ function timeout(msec) {
 }
 
 function start() {
+  var curid = ++searchid;
+  $('#running').show();
+
   var loop = function(query) {
     var url = 'https://search.twitter.com/search.json';
     var req = url + query + '&callback=?';
     $.getJSON(req)
       .success(function(data){
+        if (curid != searchid) {
+          return;
+        }
         var results = data.results.reverse();
         if (results.length == 0) {
           $('#waiting').show();
@@ -42,6 +51,9 @@ function start() {
         } else {
           $('#waiting').hide();
           var f = function(i) {
+            if (curid != searchid) {
+              return;
+            }
             if (i < results.length) {
               $('#tweettable').prepend(
                 $('#tmpl-tweet-row').tmpl({result:results[i]}));
@@ -65,6 +77,15 @@ function start() {
   loop('?' + $.param(data));
 }
 
+function stop() {
+  ++searchid;
+  $('#running').hide();
+  $('#waiting').hide();
+  if (audio) {
+    audio.pause();
+  }
+}
+
 function speak(text, lang) {
   var d = $.Deferred();
   var url = "https://api.microsofttranslator.com/v2/Http.svc/Speak";
@@ -74,23 +95,25 @@ function speak(text, lang) {
     language: lang
   };
   var req = url + '?' + $.param(data);
-  var audio = new Audio(req);
+  audio = new Audio(req);
   audio.onended = function() { d.resolve(); };
+  audio.onpause = function() { d.reject(); };
   audio.play();
   return d.promise();
 }
 
-function waiting_animation(i) {
+function running_animation(i) {
   if (i >= 5) { i = 0; }
-  var s = 'waiting';
+  var s = '';
   for (var j = 0; j < i; ++j) { s = s + '.'; }
-  $('#waiting').html(s);
-  timeout(1000).done(function(){waiting_animation(i + 1);});
+  $('#running').html(s);
+  timeout(1000).done(function(){running_animation(i + 1);});
 }
 
 jQuery(function($){
   $('#waiting').hide();
-  waiting_animation(0);
+  $('#running').hide();
+  running_animation(0);
 });
 
 </script>
@@ -123,7 +146,9 @@ twitter search: <input id="q" type="text" />
 <option value="th">th</option>
 </select>
 <button type="button" onclick="start()">start</button>
-<span id="waiting"></span>
+<button type="button" onclick="stop()">stop</button>
+<span id="waiting">waiting</span>
+<span id="running"></span>
 </div>
 
 <table id="tweettable" style="width:100%">
