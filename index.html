@@ -8,6 +8,10 @@
 <script src="https://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
 
 <style>
+td, th {
+  vertical-align: top;
+}
+
 .avatar img {
   width: 48px;
   height: 48px;
@@ -183,7 +187,7 @@ twitter search: <input id="q" type="text" />
     <div class="avatar"><a href="http://twitter.com/${result.from_user}"><img src="${result.profile_image_url}" /></a></div>
   </td>
   <td width="100%">
-    <div class="msg">${result.text}</div>
+    <div class="msg"><a href="http://twitter.com/${result.from_user}">${result.from_user}</a> ${result.text}</div>
   </td>
 </tr>
 </script>
