@@ -1,1 +1,132 @@
-My GitHub Page
+<!doctype html>
+<!-- twitter search api + bing speak api -->
+<html>
+<head>
+<meta charset="utf-8" />
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+<script src="https://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
+
+<script>
+
+// XXX: Change this variable to your appid.
+// See http://www.bing.com/developers/
+var bing_appid = '7E4F352C80692687D39E6CD42998104C5F79281C';
+
+var rowdelay = 3000;
+var requestdelay = 15000;
+
+function timeout(msec) {
+  var d = $.Deferred();
+  setTimeout(function(){ d.resolve(); }, msec);
+  return d.promise();
+}
+
+function start() {
+  var loop = function(query) {
+    var url = 'https://search.twitter.com/search.json';
+    var req = url + query + '&callback=?';
+    $.getJSON(req)
+      .success(function(data){
+        var results = data.results.reverse();
+        if (results.length == 0) {
+          $('#waiting').show();
+          timeout(requestdelay).done(function(){loop(data.refresh_url);});
+        } else {
+          $('#waiting').hide();
+          var f = function(i) {
+            if (i < results.length) {
+              $('#tweettable').prepend(
+                $('#tmpl-tweet-row').tmpl({result:results[i]}));
+              speak(results[i].text, lang).done(function(){f(i + 1);});
+              //timeout(rowdelay).done(function(){f(i + 1);});
+            } else {
+              loop(data.refresh_url);
+            }
+          };
+          f(0);
+        }
+      });
+  };
+
+  var lang = $('#locale').val();
+  var data = {
+    q: $('#q').val(),
+    result_type: 'recent',
+    lang: lang
+  };
+  loop('?' + $.param(data));
+}
+
+function speak(text, lang) {
+  var d = $.Deferred();
+  var url = "https://api.microsofttranslator.com/v2/Http.svc/Speak";
+  var data = {
+    appId: bing_appid,
+    text: text,
+    language: lang
+  };
+  var req = url + '?' + $.param(data);
+  var audio = new Audio(req);
+  audio.onended = function() { d.resolve(); }
+  audio.play();
+  return d.promise();
+}
+
+function waiting_animation(i) {
+  if (i >= 5) { i = 0; }
+  var s = 'waiting';
+  for (var j = 0; j < i; ++j) { s = s + '.'; }
+  $('#waiting').html(s);
+  timeout(1000).done(function(){waiting_animation(i + 1);});
+}
+
+jQuery(function($){
+  $('#waiting').hide();
+  waiting_animation(0);
+});
+
+</script>
+
+</head>
+<body>
+
+<div>
+twitter search: <input id="q" type="text" />
+<select id="locale">
+<option value="ar">ar</option>
+<option value="da">da</option>
+<option value="nl">nl</option>
+<option value="en">en</option>
+<option value="fa">fa</option>
+<option value="fi">fi</option>
+<option value="fr">fr</option>
+<option value="de">ge</option>
+<option value="hu">hu</option>
+<option value="is">is</option>
+<option value="it">it</option>
+<option selected="selected" value="ja">ja</option>
+<option value="no">no</option>
+<option value="pl">pl</option>
+<option value="pt">pt</option>
+<option value="ru">ru</option>
+<option value="es">es</option>
+<option value="sv">sv</option>
+<option value="th">th</option>
+</select>
+<button type="button" onclick="start()">start</button>
+<span id="waiting"></span>
+</div>
+
+<table id="tweettable" style="width:100%">
+</table>
+
+<script id="tmpl-tweet-row" type="text/x-jquery-tmpl">
+<tr>
+  <td><img src="${result.profile_image_url}" /></td>
+  <td width="100%">${result.text}</td>
+</tr>
+</script>
+
+</body>
+</html>
