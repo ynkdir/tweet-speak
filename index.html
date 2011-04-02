@@ -38,9 +38,8 @@ function start() {
 
   var loop = function(query) {
     var url = 'https://search.twitter.com/search.json';
-    var req = url + query + '&callback=?';
-    $.getJSON(req)
-      .success(function(data){
+    $.getJSON(url + query + '&callback=?')
+      .done(function(data){
         if (curid != searchid) {
           return;
         }
@@ -57,7 +56,10 @@ function start() {
             if (i < results.length) {
               $('#tweettable').prepend(
                 $('#tmpl-tweet-row').tmpl({result:results[i]}));
-              speak(results[i].text, lang).done(function(){f(i + 1);});
+              var text = textfilter(results[i].text, lang);
+              detect(text).done(function(lang) {
+                speak(text, lang).done(function(){f(i + 1);});
+              });
               //timeout(rowdelay).done(function(){f(i + 1);});
             } else {
               loop(data.refresh_url);
@@ -68,7 +70,7 @@ function start() {
       });
   };
 
-  var lang = $('#locale').val();
+  var lang = $('#lang').val();
   var data = {
     q: $('#q').val(),
     result_type: 'recent',
@@ -94,12 +96,31 @@ function speak(text, lang) {
     text: text,
     language: lang
   };
-  var req = url + '?' + $.param(data);
-  audio = new Audio(req);
+  audio = new Audio(url + '?' + $.param(data));
   audio.onended = function() { d.resolve(); };
   audio.onpause = function() { d.reject(); };
   audio.play();
   return d.promise();
+}
+
+function detect(text) {
+  var url = 'http://api.microsofttranslator.com/V2/Ajax.svc/Detect';
+  var data = {
+    appId: bing_appid,
+    text: text
+  };
+  return $.ajax({
+      url: url,
+      data: data,
+      dataType: 'json',
+      jsonp: 'oncomplete'
+    });
+}
+
+// TODO:
+function textfilter(text, lang) {
+  var s = text.replace(/(?:https?|ftp):\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]*/g, '');
+  return s;
 }
 
 function running_animation(i) {
@@ -124,7 +145,8 @@ jQuery(function($){
 <div>
 firefox4, opera11<br />
 twitter search: <input id="q" type="text" />
-<select id="locale">
+<select id="lang">
+<option value="all">all</option>
 <option value="ar">ar</option>
 <option value="da">da</option>
 <option value="nl">nl</option>
