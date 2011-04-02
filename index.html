@@ -68,7 +68,7 @@ function speak(text, lang) {
   };
   var req = url + '?' + $.param(data);
   var audio = new Audio(req);
-  audio.onended = function() { d.resolve(); }
+  audio.onended = function() { d.resolve(); };
   audio.play();
   return d.promise();
 }
