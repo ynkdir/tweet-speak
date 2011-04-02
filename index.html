@@ -7,6 +7,13 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
 <script src="https://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
 
+<style>
+.avatar img {
+  width: 48px;
+  height: 48px;
+}
+</style>
+
 <script>
 
 // XXX: Change this variable to your appid.
@@ -124,8 +131,12 @@ twitter search: <input id="q" type="text" />
 
 <script id="tmpl-tweet-row" type="text/x-jquery-tmpl">
 <tr>
-  <td><a href="http://twitter.com/${result.from_user}"><img src="${result.profile_image_url}" /></a></td>
-  <td width="100%">${result.text}</td>
+  <td>
+    <div class="avatar"><a href="http://twitter.com/${result.from_user}"><img src="${result.profile_image_url}" /></a></div>
+  </td>
+  <td width="100%">
+    <div class="msg">${result.text}</div>
+  </td>
 </tr>
 </script>
 
