@@ -123,7 +123,7 @@ twitter search: <input id="q" type="text" />
 
 <script id="tmpl-tweet-row" type="text/x-jquery-tmpl">
 <tr>
-  <td><img src="${result.profile_image_url}" /></td>
+  <td><a href="http://twitter.com/${result.from_user}"><img src="${result.profile_image_url}" /></a></td>
   <td width="100%">${result.text}</td>
 </tr>
 </script>
