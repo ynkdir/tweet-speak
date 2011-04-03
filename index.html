@@ -162,7 +162,20 @@ function running_animation(i) {
   timeout(1000).done(function(){running_animation(i + 1);});
 }
 
+function is_audio_wav_supported() {
+  var audio = new Audio();
+  if (audio.canPlayType('audio/wav') == '') {
+    return false;
+  }
+  return true;
+}
+
 jQuery(function($){
+  if (is_audio_wav_supported()) {
+    $('#notsupported').hide();
+  } else {
+    $('#notsupported').show();
+  }
   getLanguagesForSpeak().done(function(languages) {
     speak_languages = languages;
   });
@@ -177,7 +190,6 @@ jQuery(function($){
 <body>
 
 <div>
-firefox4, opera11<br />
 twitter search: <input id="q" type="text" />
 <select id="lang">
 <option value="all">Any Language</option>
@@ -203,7 +215,8 @@ twitter search: <input id="q" type="text" />
 </select>
 <button type="button" onclick="start()">start</button>
 <button type="button" onclick="stop()">stop</button>
-<audio id="speakaudio" controls="controls"></audio>
+<audio id="speakaudio" controls="controls">audio tag is not supported.</audio>
+<span id="notsupported">audio/wav is not supported.</span>
 <span id="waiting">waiting</span>
 <span id="running"></span>
 </div>
