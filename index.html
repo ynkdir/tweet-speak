@@ -24,6 +24,9 @@ td, th {
 // See http://www.bing.com/developers/
 var bing_appid = '7E4F352C80692687D39E6CD42998104C5F79281C';
 
+var speak_default_language = 'en';
+var speak_languages = ['en'];
+
 var rowdelay = 3000;
 var requestdelay = 15000;
 
@@ -61,7 +64,12 @@ function start() {
                 $('#tmpl-tweet-row').tmpl({result:results[i]}));
               var text = textfilter(results[i].text, lang);
               detect(text).done(function(lang) {
-                speak(text, lang).done(function(){f(i + 1);});
+                if ($.inArray(lang, speak_languages) == -1) {
+                  lang = speak_default_language;
+                }
+                speak(text, lang)
+                  .then(function(){f(i + 1);},
+                        function(){f(i + 1);});
               });
               //timeout(rowdelay).done(function(){f(i + 1);});
             } else {
@@ -91,16 +99,25 @@ function stop() {
 
 function speak(text, lang) {
   var d = $.Deferred();
-  var url = "https://api.microsofttranslator.com/v2/Http.svc/Speak";
+  var url = 'https://api.microsofttranslator.com/V2/Ajax.svc/Speak';
   var data = {
     appId: bing_appid,
     text: text,
     language: lang
   };
-  $('#speakaudio')
-    .attr('src', url + '?' + $.param(data))
-    .bind('ended', function() { d.resolve(); })
-    .get(0).play();
+  $.ajax({
+    url: url,
+    data: data,
+    dataType: 'json',
+    jsonp: 'oncomplete'
+  }).then(function(streamurl) {
+    $('#speakaudio')
+      .attr('src', streamurl)
+      .bind('ended', function() { d.resolve(); })
+      .get(0).play();
+  }, function() {
+    d.reject();
+  });
   return d.promise();
 }
 
@@ -109,6 +126,19 @@ function detect(text) {
   var data = {
     appId: bing_appid,
     text: text
+  };
+  return $.ajax({
+      url: url,
+      data: data,
+      dataType: 'json',
+      jsonp: 'oncomplete'
+    });
+}
+
+function getLanguagesForSpeak() {
+  var url = 'http://api.microsofttranslator.com/V2/Ajax.svc/GetLanguagesForSpeak';
+  var data = {
+    appId: bing_appid
   };
   return $.ajax({
       url: url,
@@ -133,6 +163,9 @@ function running_animation(i) {
 }
 
 jQuery(function($){
+  getLanguagesForSpeak().done(function(languages) {
+    speak_languages = languages;
+  });
   $('#waiting').hide();
   $('#running').hide();
   running_animation(0);
