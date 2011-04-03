@@ -190,6 +190,7 @@ jQuery(function($){
 <body>
 
 <div>
+<form onsubmit="return false;">
 twitter search: <input id="q" type="text" />
 <select id="lang">
 <option value="all">Any Language</option>
@@ -213,12 +214,13 @@ twitter search: <input id="q" type="text" />
 <option value="sv">Swedish (Svenska)</option>
 <option value="th">Thai (ไทย)</option>
 </select>
-<button type="button" onclick="start()">start</button>
+<button type="submit" onclick="start()">start</button>
 <button type="button" onclick="stop()">stop</button>
 <audio id="speakaudio" controls="controls">audio tag is not supported.</audio>
 <span id="notsupported">audio/wav is not supported.</span>
 <span id="waiting">waiting</span>
 <span id="running"></span>
+</form>
 </div>
 
 <table id="tweettable" style="width:100%">
