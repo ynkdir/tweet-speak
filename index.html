@@ -40,6 +40,24 @@ function timeout(msec) {
   return d.promise();
 }
 
+function search(q, lang, since_id) {
+  var url = 'https://search.twitter.com/search.json';
+  var data = {
+    q: q,
+    lang: lang,
+    result_type: 'recent'
+  };
+  if (since_id) {
+    data.since_id = since_id;
+  }
+  return $.ajax({
+    url: url,
+    data: data,
+    dataType: 'json',
+    jsonp: 'callback'
+  });
+}
+
 function start() {
   var curid = ++searchid;
   $('#running').show();
@@ -47,58 +65,49 @@ function start() {
   var q = $('#q').val();
   var lang = $('#lang').val();
 
-  var loop = function(since_id) {
-    var url = 'https://search.twitter.com/search.json';
-    var param = {
-      q: q,
-      lang: lang,
-      result_type: 'recent'
-    };
-    if (since_id) {
-      param.since_id = since_id;
+  function each(data, i) {
+    if (curid !== searchid) {
+      return;
     }
-    $.getJSON(url + '?' + $.param(param) + '&callback=?')
-      .done(function(data){
-        // MEMO: data.refresh_url doesn't contain lang param
-        if (curid !== searchid) {
-          return;
-        }
-        if (data.results === undefined) {
-          stop();
-          return;
-        }
-        var results = data.results.reverse();
-        if (results.length === 0) {
-          $('#waiting').show();
-          timeout(requestdelay).done(function(){loop(data.max_id_str);});
-        } else {
-          $('#waiting').hide();
-          var f = function(i) {
-            if (curid !== searchid) {
-              return;
-            }
-            if (i < results.length) {
-              $('#tweettable').prepend(
-                $('#tmpl-tweet-row').tmpl({result:results[i]}));
-              var text = textfilter(results[i].text, lang);
-              detect(text).done(function(lang) {
-                if ($.inArray(lang, speak_languages) === -1) {
-                  lang = speak_default_language;
-                }
-                speak(text, lang)
-                  .then(function(){f(i + 1);},
-                        function(){f(i + 1);});
-              });
-              //timeout(rowdelay).done(function(){f(i + 1);});
-            } else {
-              loop(data.max_id_str);
-            }
-          };
-          f(0);
-        }
-      });
-  };
-  loop();
+    if (i >= data.results.length) {
+      next(data.max_id_str);
+      return;
+    }
+    var result = data.results[data.results.length - i - 1];
+    $('#tweettable').prepend(
+      $('#tmpl-tweet-row').tmpl({result:result}));
+    var text = textfilter(result.text, lang);
+    detect(text).done(function(lang) {
+      if ($.inArray(lang, speak_languages) === -1) {
+        lang = speak_default_language;
+      }
+      speak(text, lang)
+        .then(function(){each(data, i + 1);},
+              function(){each(data, i + 1);});
+    });
+  }
+
+  function next(since_id) {
+    search(q, lang, since_id).done(function(data){
+      // MEMO: data.refresh_url doesn't contain lang param
+      if (curid !== searchid) {
+        return;
+      }
+      if (data.results === undefined) {
+        stop();
+        return;
+      }
+      if (data.results.length === 0) {
+        $('#waiting').show();
+        timeout(requestdelay).done(function(){next(data.max_id_str);});
+      } else {
+        $('#waiting').hide();
+        each(data, 0);
+      }
+    });
+  }
+
+  next(null);
 }
 
 function stop() {
