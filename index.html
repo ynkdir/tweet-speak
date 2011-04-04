@@ -167,16 +167,22 @@ function running_animation(i) {
   timeout(1000).done(function(){running_animation(i + 1);});
 }
 
-function is_audio_wav_supported() {
-  var audio = new Audio();
-  if (audio.canPlayType('audio/wav') == '') {
+function is_audio_type_supported(type) {
+  var audio = null;
+  try {
+    audio = new Audio();
+  } catch (e) {
+    return false;
+  }
+  if (audio.canPlayType(type) == '') {
     return false;
   }
   return true;
 }
 
+
 jQuery(function($){
-  if (is_audio_wav_supported()) {
+  if (is_audio_type_supported('audio/wav')) {
     $('#notsupported').hide();
   } else {
     $('#notsupported').show();
