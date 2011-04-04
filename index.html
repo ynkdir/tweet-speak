@@ -60,17 +60,21 @@ function start() {
     $.getJSON(url + '?' + $.param(param) + '&callback=?')
       .done(function(data){
         // MEMO: data.refresh_url doesn't contain lang param
-        if (curid != searchid) {
+        if (curid !== searchid) {
+          return;
+        }
+        if (data.results === undefined) {
+          stop();
           return;
         }
         var results = data.results.reverse();
-        if (results.length == 0) {
+        if (results.length === 0) {
           $('#waiting').show();
           timeout(requestdelay).done(function(){loop(data.max_id_str);});
         } else {
           $('#waiting').hide();
           var f = function(i) {
-            if (curid != searchid) {
+            if (curid !== searchid) {
               return;
             }
             if (i < results.length) {
@@ -78,7 +82,7 @@ function start() {
                 $('#tmpl-tweet-row').tmpl({result:results[i]}));
               var text = textfilter(results[i].text, lang);
               detect(text).done(function(lang) {
-                if ($.inArray(lang, speak_languages) == -1) {
+                if ($.inArray(lang, speak_languages) === -1) {
                   lang = speak_default_language;
                 }
                 speak(text, lang)
@@ -176,16 +180,15 @@ function textfilter(text, lang) {
 
 function htmlfilter(text) {
   var s = text;
-  s = s.replace(/[a-z]+:\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]+/g, '<a href="$&">$&</a>');
+  s = s.replace(/[a-z]+:\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]+/g, '<a href="$&">$&<\/a>');
   return s;
 }
 
 function running_animation(i) {
-  if (i >= 5) { i = 0; }
-  var s = '';
-  for (var j = 0; j < i; ++j) { s = s + '.'; }
+  var j, s = '';
+  for (j = 0; j < i; ++j) { s = s + '.'; }
   $('#running').html(s);
-  timeout(1000).done(function(){running_animation(i + 1);});
+  timeout(1000).done(function(){running_animation((i + 1) % 5);});
 }
 
 function is_audio_type_supported(type) {
@@ -195,7 +198,7 @@ function is_audio_type_supported(type) {
   } catch (e) {
     return false;
   }
-  if (audio.canPlayType(type) == '') {
+  if (audio.canPlayType(type) === '') {
     return false;
   }
   return true;
@@ -245,8 +248,8 @@ twitter search: <input id="q" type="text" />
 <option value="sv">Swedish (Svenska)</option>
 <option value="th">Thai (ไทย)</option>
 </select>
-<button type="submit" onclick="start()">start</button>
-<button type="button" onclick="stop()">stop</button>
+<button type="submit" onclick="start();">start</button>
+<button type="button" onclick="stop();">stop</button>
 <audio id="speakaudio" controls="controls">audio tag is not supported.</audio>
 <span id="notsupported">audio/wav is not supported.</span>
 <span id="waiting">waiting</span>
