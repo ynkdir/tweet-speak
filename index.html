@@ -99,7 +99,11 @@ function stop() {
   ++searchid;
   $('#running').hide();
   $('#waiting').hide();
-  $('#speakaudio').get(0).pause();
+  if ($.browser.msie) {
+    $('#iesound').get(0).pause();
+  } else {
+    $('#speakaudio').get(0).pause();
+  }
 }
 
 function speak(text, lang) {
@@ -116,10 +120,16 @@ function speak(text, lang) {
     dataType: 'json',
     jsonp: 'oncomplete'
   }).then(function(streamurl) {
-    $('#speakaudio')
-      .attr('src', streamurl)
-      .bind('ended', function() { d.resolve(); })
-      .get(0).play();
+    if ($.browser.msie) {
+      var iesound = $('#iesound').get(0);
+      iesound.onended = function() { d.resolve(); };
+      iesound.FileName = streamurl;
+    } else {
+      $('#speakaudio')
+        .attr('src', streamurl)
+        .bind('ended', function() { d.resolve(); })
+        .get(0).play();
+    }
   }, function() {
     d.reject();
   });
@@ -180,7 +190,6 @@ function is_audio_type_supported(type) {
   return true;
 }
 
-
 jQuery(function($){
   if (is_audio_type_supported('audio/wav')) {
     $('#notsupported').hide();
@@ -233,6 +242,20 @@ twitter search: <input id="q" type="text" />
 <span id="running"></span>
 </form>
 </div>
+<!--[if IE]>
+<div>
+use media player for alternative.
+<object id="iesound"
+  classid="CLSID:22D6F312-B0F6-11D0-94AB-0080C74C7E95" height="50" width="200">
+ <param name="AutoStart" value="true">
+ <param name="ShowControls" value="true">
+</object>
+<script for="iesound" event="EndOfStream(lResult)" type="text/javascript">
+document.getElementById('iesound').onended();
+</script>
+</div>
+<![endif]-->
+
 
 <table id="tweettable" style="width:100%">
 </table>
@@ -250,3 +273,4 @@ twitter search: <input id="q" type="text" />
 
 </body>
 </html>
+
