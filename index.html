@@ -168,7 +168,7 @@ function textfilter(text, lang) {
   var s = text;
   // decode html entity
   s = $('<div/>').html(s).text();
-  s = text.replace(/(?:https?|ftp):\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]*/g, '');
+  s = s.replace(/(?:https?|ftp):\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]*/g, '');
   return s;
 }
 
