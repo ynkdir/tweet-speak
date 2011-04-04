@@ -170,7 +170,13 @@ function textfilter(text, lang) {
   var s = text;
   // decode html entity
   s = $('<div/>').html(s).text();
-  s = s.replace(/(?:https?|ftp):\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]*/g, '');
+  s = s.replace(/[a-z]+:\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]+/g, '');
+  return s;
+}
+
+function htmlfilter(text) {
+  var s = text;
+  s = s.replace(/[a-z]+:\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]+/g, '<a href="$&">$&</a>');
   return s;
 }
 
@@ -271,7 +277,7 @@ document.getElementById('iesound').onended();
     <div class="avatar"><a href="http://twitter.com/${result.from_user}"><img src="${result.profile_image_url}" /></a></div>
   </td>
   <td width="100%">
-    <div class="msg"><a href="http://twitter.com/${result.from_user}">${result.from_user}</a> ${result.text}</div>
+    <div class="msg"><a href="http://twitter.com/${result.from_user}">${result.from_user}</a> {{html htmlfilter(result.text)}}</div>
   </td>
 </tr>
 </script>
