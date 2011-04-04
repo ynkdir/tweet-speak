@@ -42,17 +42,29 @@ function start() {
   var curid = ++searchid;
   $('#running').show();
 
-  var loop = function(query) {
+  var q = $('#q').val();
+  var lang = $('#lang').val();
+
+  var loop = function(since_id) {
     var url = 'https://search.twitter.com/search.json';
-    $.getJSON(url + query + '&callback=?')
+    var param = {
+      q: q,
+      lang: lang,
+      result_type: 'recent'
+    };
+    if (since_id) {
+      param.since_id = since_id;
+    }
+    $.getJSON(url + '?' + $.param(param) + '&callback=?')
       .done(function(data){
+        // MEMO: data.refresh_url doesn't contain lang param
         if (curid != searchid) {
           return;
         }
         var results = data.results.reverse();
         if (results.length == 0) {
           $('#waiting').show();
-          timeout(requestdelay).done(function(){loop(data.refresh_url);});
+          timeout(requestdelay).done(function(){loop(data.max_id_str);});
         } else {
           $('#waiting').hide();
           var f = function(i) {
@@ -73,21 +85,14 @@ function start() {
               });
               //timeout(rowdelay).done(function(){f(i + 1);});
             } else {
-              loop(data.refresh_url);
+              loop(data.max_id_str);
             }
           };
           f(0);
         }
       });
   };
-
-  var lang = $('#lang').val();
-  var data = {
-    q: $('#q').val(),
-    result_type: 'recent',
-    lang: lang
-  };
-  loop('?' + $.param(data));
+  loop();
 }
 
 function stop() {
