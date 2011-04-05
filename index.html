@@ -190,7 +190,7 @@ function textfilter(text, lang) {
   s = s.replace(/[a-z]+:\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]+/g, '');
   // WORKAROUND: bing ajax api for text=%22
   // "There was an error deserializing the object of type System.String. Unexpected end of file. Following elements are not closed: root."
-  s = s.replace(/"/g, '');
+  s = s.replace(/"/g, ' ');
   return s;
 }
 
