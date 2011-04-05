@@ -36,7 +36,7 @@ var searchid = 0;
 
 function timeout(msec) {
   var d = $.Deferred();
-  setTimeout(function(){ d.resolve(); }, msec);
+  setTimeout(function() { d.resolve(); }, msec);
   return d.promise();
 }
 
@@ -75,15 +75,15 @@ function start() {
     }
     var result = data.results[data.results.length - i - 1];
     $('#tweettable').prepend(
-      $('#tmpl-tweet-row').tmpl({result:result}));
+      $('#tmpl-tweet-row').tmpl({result: result}));
     var text = textfilter(result.text, lang);
     detect(text).then(function(lang) {
       if ($.inArray(lang, speak_languages) === -1) {
         lang = speak_default_language;
       }
       speak(text, lang)
-        .then(function(){each(data, i + 1);},
-              function(){each(data, i + 1);});
+        .then(function() { each(data, i + 1); },
+              function() { each(data, i + 1); });
     }, function(xhr, textStatus, errorThrown) {
       console.log(textStatus, errorThrown);
       each(data, i + 1);
@@ -91,7 +91,7 @@ function start() {
   }
 
   function next(since_id) {
-    search(q, lang, since_id).done(function(data){
+    search(q, lang, since_id).done(function(data) {
       // MEMO: data.refresh_url doesn't contain lang param
       if (curid !== searchid) {
         return;
@@ -102,7 +102,7 @@ function start() {
       }
       if (data.results.length === 0) {
         $('#waiting').show();
-        timeout(requestdelay).done(function(){next(data.max_id_str);});
+        timeout(requestdelay).done(function() { next(data.max_id_str); });
       } else {
         $('#waiting').hide();
         each(data, 0);
@@ -149,7 +149,7 @@ function speak(text, lang) {
         .get(0).play();
     }
   }, function(xhr, textStatus, errorThrown) {
-    console.log(textStatus, errorThrown)
+    console.log(textStatus, errorThrown);
     d.reject();
   });
   return d.promise();
@@ -204,7 +204,7 @@ function running_animation(i) {
   var j, s = '';
   for (j = 0; j < i; ++j) { s = s + '.'; }
   $('#running').html(s);
-  timeout(1000).done(function(){running_animation((i + 1) % 5);});
+  timeout(1000).done(function() { running_animation((i + 1) % 5); });
 }
 
 function is_audio_type_supported(type) {
@@ -220,7 +220,7 @@ function is_audio_type_supported(type) {
   return true;
 }
 
-jQuery(function($){
+jQuery(function($) {
   if (is_audio_type_supported('audio/wav')) {
     $('#notsupported').hide();
   } else {
