@@ -182,7 +182,7 @@ function getLanguagesForSpeak() {
 function textfilter(text, lang) {
   var s = text;
   // decode html entity
-  s = $('<div/>').html(s).text();
+  s = $('<div\/>').html(s).text();
   s = s.replace(/[a-z]+:\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]+/g, '');
   return s;
 }
