@@ -77,13 +77,16 @@ function start() {
     $('#tweettable').prepend(
       $('#tmpl-tweet-row').tmpl({result:result}));
     var text = textfilter(result.text, lang);
-    detect(text).done(function(lang) {
+    detect(text).then(function(lang) {
       if ($.inArray(lang, speak_languages) === -1) {
         lang = speak_default_language;
       }
       speak(text, lang)
         .then(function(){each(data, i + 1);},
               function(){each(data, i + 1);});
+    }, function(xhr, textStatus, errorThrown) {
+      console.log(textStatus, errorThrown);
+      each(data, i + 1);
     });
   }
 
@@ -145,7 +148,8 @@ function speak(text, lang) {
         .bind('ended', function() { d.resolve(); })
         .get(0).play();
     }
-  }, function() {
+  }, function(xhr, textStatus, errorThrown) {
+    console.log(textStatus, errorThrown)
     d.reject();
   });
   return d.promise();
@@ -184,6 +188,9 @@ function textfilter(text, lang) {
   // decode html entity
   s = $('<div\/>').html(s).text();
   s = s.replace(/[a-z]+:\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]+/g, '');
+  // WORKAROUND: bing ajax api for text=%22
+  // "There was an error deserializing the object of type System.String. Unexpected end of file. Following elements are not closed: root."
+  s = s.replace(/"/g, '');
   return s;
 }
 
