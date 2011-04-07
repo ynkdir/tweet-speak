@@ -29,6 +29,10 @@ var bing_appid = '7E4F352C80692687D39E6CD42998104C5F79281C';
 var speak_default_language = 'en';
 var speak_languages = ['en'];
 
+// When using jsonp $.ajax() doesn't call error handler for server error.
+// Use timeout to handle request error.
+var jsonp_timeout = 3 * 60 * 1000;
+
 var rowdelay = 3000;
 var requestdelay = 15000;
 
@@ -54,7 +58,8 @@ function search(q, lang, since_id) {
     url: url,
     data: data,
     dataType: 'jsonp',
-    jsonp: 'callback'
+    jsonp: 'callback',
+    timeout: jsonp_timeout
   });
 }
 
@@ -91,7 +96,7 @@ function start() {
   }
 
   function next(since_id) {
-    search(q, lang, since_id).done(function(data) {
+    search(q, lang, since_id).then(function(data) {
       // MEMO: data.refresh_url doesn't contain lang param
       if (curid !== searchid) {
         return;
@@ -107,6 +112,8 @@ function start() {
         $('#waiting').hide();
         each(data, 0);
       }
+    }, function() {
+      timeout(requestdelay).done(function() { next(data.max_id_str); });
     });
   }
 
@@ -136,7 +143,8 @@ function speak(text, lang) {
     url: url,
     data: data,
     dataType: 'jsonp',
-    jsonp: 'oncomplete'
+    jsonp: 'oncomplete',
+    timeout: jsonp_timeout
   }).then(function(streamurl) {
     if ($.browser.msie) {
       var iesound = $('#iesound').get(0);
@@ -148,6 +156,7 @@ function speak(text, lang) {
         .bind('ended', function() { d.resolve(); })
         .get(0).play();
     }
+    timeout(jsonp_timeout).done(d.reject());
   }, function(xhr, textStatus, errorThrown) {
     console.log(textStatus, errorThrown);
     d.reject();
@@ -165,7 +174,8 @@ function detect(text) {
       url: url,
       data: data,
       dataType: 'jsonp',
-      jsonp: 'oncomplete'
+      jsonp: 'oncomplete',
+      timeout: jsonp_timeout
     });
 }
 
@@ -178,7 +188,8 @@ function getLanguagesForSpeak() {
       url: url,
       data: data,
       dataType: 'jsonp',
-      jsonp: 'oncomplete'
+      jsonp: 'oncomplete',
+      timeout: jsonp_timeout
     });
 }
 
