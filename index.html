@@ -40,8 +40,10 @@ var searchid = 0;
 
 function timeout(msec) {
   var d = $.Deferred();
-  setTimeout(function() { d.resolve(); }, msec);
-  return d.promise();
+  var t = setTimeout(function() { d.resolve(); }, msec);
+  var p = d.promise();
+  p.clear = function() { clearTimeout(t); };
+  return p;
 }
 
 function search(q, lang, since_id) {
@@ -146,14 +148,16 @@ function speak(text, lang) {
     jsonp: 'oncomplete',
     timeout: jsonp_timeout
   }).then(function(streamurl) {
+    var t = timeout(jsonp_timeout);
+    t.done(function() { d.reject(); });
     if ($.browser.msie) {
       var iesound = $('#iesound').get(0);
-      iesound.onended = function() { d.resolve(); };
+      iesound.onended = function() { t.clear(); d.resolve(); };
       iesound.FileName = streamurl;
     } else {
       $('#speakaudio')
         .attr('src', streamurl)
-        .bind('ended', function() { d.resolve(); })
+        .bind('ended', function() { t.clear(); d.resolve(); })
         .get(0).play();
     }
   }, function(xhr, textStatus, errorThrown) {
