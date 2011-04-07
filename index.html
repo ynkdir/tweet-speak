@@ -115,7 +115,7 @@ function start() {
         each(data, 0);
       }
     }, function() {
-      timeout(requestdelay).done(function() { next(data.max_id_str); });
+      timeout(requestdelay).done(function() { next(since_id); });
     });
   }
 
