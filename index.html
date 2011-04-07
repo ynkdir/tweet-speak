@@ -156,7 +156,6 @@ function speak(text, lang) {
         .bind('ended', function() { d.resolve(); })
         .get(0).play();
     }
-    timeout(jsonp_timeout).done(d.reject());
   }, function(xhr, textStatus, errorThrown) {
     console.log(textStatus, errorThrown);
     d.reject();
