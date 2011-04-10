@@ -1,6 +1,6 @@
-<!doctype html>
+<!DOCTYPE html>
 <!-- twitter search api + bing speak api -->
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <meta charset="utf-8" />
 
@@ -200,7 +200,7 @@ function getLanguagesForSpeak() {
 function textfilter(text, lang) {
   var s = text;
   // decode html entity
-  s = $('<div\/>').html(s).text();
+  s = $('<div><\/div>').html(s).text();
   s = s.replace(/[a-z]+:\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]+/g, '');
   // WORKAROUND: bing ajax api returns error for text=%22
   // "There was an error deserializing the object of type System.String. Unexpected end of file. Following elements are not closed: root."
@@ -317,4 +317,3 @@ document.getElementById('iesound').onended();
 
 </body>
 </html>
-
