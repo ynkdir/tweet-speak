@@ -103,15 +103,16 @@ function start() {
       if (curid !== searchid) {
         return;
       }
-      if (data.results === undefined) {
+      if (data.error) {
+        $('#status').text('twitter search error: ' + data.error);
         stop();
         return;
       }
       if (data.results.length === 0) {
-        $('#waiting').show();
+        $('#status').text('waiting');
         timeout(requestdelay).done(function() { next(data.max_id_str); });
       } else {
-        $('#waiting').hide();
+        $('#status').text('');
         each(data, 0);
       }
     }, function() {
@@ -125,7 +126,6 @@ function start() {
 function stop() {
   ++searchid;
   $('#running').hide();
-  $('#waiting').hide();
   if ($.browser.msie) {
     $('#iesound').get(0).pause();
   } else {
@@ -243,7 +243,6 @@ jQuery(function($) {
   getLanguagesForSpeak().done(function(languages) {
     speak_languages = languages;
   });
-  $('#waiting').hide();
   $('#running').hide();
   running_animation(0);
 });
@@ -282,7 +281,7 @@ jQuery(function($) {
 <button type="button" onclick="stop();">stop</button>
 <audio id="speakaudio" controls="controls">audio tag is not supported.</audio>
 <span id="notsupported">audio/wav is not supported.</span>
-<span id="waiting">waiting</span>
+<span id="status"></span>
 <span id="running"></span>
 </form>
 </div>
