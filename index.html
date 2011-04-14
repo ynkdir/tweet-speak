@@ -36,7 +36,17 @@ var jsonp_timeout = 3 * 60 * 1000;
 var rowdelay = 3000;
 var requestdelay = 15000;
 
-var searchid = 0;
+var currentsearch = null;
+
+function selfy(self, methods) {
+  var method;
+  for (method in methods) {
+    if (methods.hasOwnProperty(method)) {
+      self[method] = methods[method].bind(self, self);
+    }
+  }
+  return self;
+}
 
 function timeout(msec) {
   var d = $.Deferred();
@@ -63,74 +73,6 @@ function search(q, lang, since_id) {
     jsonp: 'callback',
     timeout: jsonp_timeout
   });
-}
-
-function start() {
-  var curid = ++searchid;
-  $('#running').show();
-
-  var q = $('#q').val();
-  var lang = $('#lang').val();
-
-  function each(data, i) {
-    if (curid !== searchid) {
-      return;
-    }
-    if (i >= data.results.length) {
-      next(data.max_id_str);
-      return;
-    }
-    var result = data.results[data.results.length - i - 1];
-    $('#tweettable').prepend(
-      $('#tmpl-tweet-row').tmpl({result: result}));
-    var text = textfilter(result.text, lang);
-    detect(text).then(function(lang) {
-      if ($.inArray(lang, speak_languages) === -1) {
-        lang = speak_default_language;
-      }
-      speak(text, lang)
-        .then(function() { each(data, i + 1); },
-              function() { each(data, i + 1); });
-    }, function(xhr, textStatus, errorThrown) {
-      console.log(textStatus, errorThrown);
-      each(data, i + 1);
-    });
-  }
-
-  function next(since_id) {
-    search(q, lang, since_id).then(function(data) {
-      // MEMO: data.refresh_url doesn't contain lang param
-      if (curid !== searchid) {
-        return;
-      }
-      if (data.error) {
-        $('#status').text('twitter search error: ' + data.error);
-        stop();
-        return;
-      }
-      if (data.results.length === 0) {
-        $('#status').text('waiting');
-        timeout(requestdelay).done(function() { next(data.max_id_str); });
-      } else {
-        $('#status').text('');
-        each(data, 0);
-      }
-    }, function() {
-      timeout(requestdelay).done(function() { next(since_id); });
-    });
-  }
-
-  next(null);
-}
-
-function stop() {
-  ++searchid;
-  $('#running').hide();
-  if ($.browser.msie) {
-    $('#iesound').get(0).pause();
-  } else {
-    $('#speakaudio').get(0).pause();
-  }
 }
 
 function speak(text, lang) {
@@ -212,6 +154,96 @@ function htmlfilter(text) {
   var s = text;
   s = s.replace(/[a-z]+:\/\/[\x00-\x08\x0A-\x1F\x21-\x7F]+/g, '<a href="$&">$&<\/a>');
   return s;
+}
+
+var SearchContext = function(q, lang) {
+  var self = selfy(this, SearchContext.prototype);
+  self.q = q;
+  self.lang = lang;
+  self.since_id = null;
+  self.i = 0;
+  self.results = null;
+  self.d = null;
+};
+
+SearchContext.prototype.next = function(self) {
+  self.d = $.Deferred();
+  if (self !== currentsearch) {
+    return self.d.promise();
+  }
+  if (self.results && self.i < self.results.length) {
+    self.d.resolve(self.results[self.i++]);
+  } else {
+    self.search();
+  }
+  return self.d.promise();
+};
+
+SearchContext.prototype.search = function(self) {
+  search(self.q, self.lang, self.since_id).then(
+    self.on_search_done,
+    self.on_search_fail);
+};
+
+SearchContext.prototype.on_search_done = function(self, data) {
+  // MEMO: data.refresh_url doesn't contain lang param
+  if (self !== currentsearch) {
+    return;
+  }
+  if (data.error) {
+    $('#status').text('twitter search error: ' + data.error);
+    self.d.reject();
+    return;
+  }
+  if (data.results.length === 0) {
+    $('#status').text('waiting');
+    timeout(requestdelay).done(self.search);
+    return;
+  }
+  $('#status').text('');
+  self.since_id = data.max_id_str;
+  self.i = 0;
+  self.results = data.results.reverse();
+  self.d.resolve(self.results[self.i++]);
+};
+
+SearchContext.prototype.on_search_fail = function(self, xhr, textStatus, errorThrown) {
+  console.log(textStatus, errorThrown);
+  timeout(requestdelay).done(self.search);
+};
+
+function start() {
+  var q = $('#q').val(),
+      lang = $('#lang').val(),
+      ctx;
+  $('#running').show();
+  currentsearch = ctx = new SearchContext(q, lang);
+  ctx.next().done(function callback(result) {
+    $('#tweettable').prepend(
+      $('#tmpl-tweet-row').tmpl({result: result}));
+    var text = textfilter(result.text, lang);
+    detect(text).then(function(lang) {
+      if ($.inArray(lang, speak_languages) === -1) {
+        lang = speak_default_language;
+      }
+      speak(text, lang).then(
+        function() { ctx.next().done(callback); },
+        function() { ctx.next().done(callback); });
+    }, function(xhr, textStatus, errorThrown) {
+      console.log(textStatus, errorThrown);
+      ctx.next().done(callback);
+    });
+  });
+}
+
+function stop() {
+  currentsearch = null;
+  $('#running').hide();
+  if ($.browser.msie) {
+    $('#iesound').get(0).pause();
+  } else {
+    $('#speakaudio').get(0).pause();
+  }
 }
 
 function running_animation(i) {
