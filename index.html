@@ -76,37 +76,19 @@ function search(q, lang, since_id) {
 }
 
 function speak(text, lang) {
-  var d = $.Deferred();
   var url = 'https://api.microsofttranslator.com/V2/Ajax.svc/Speak';
   var data = {
     appId: bing_appid,
     text: text,
     language: lang
   };
-  $.ajax({
+  return $.ajax({
     url: url,
     data: data,
     dataType: 'jsonp',
     jsonp: 'oncomplete',
     timeout: jsonp_timeout
-  }).then(function(streamurl) {
-    var t = timeout(jsonp_timeout);
-    t.done(function() { d.reject(); });
-    if ($.browser.msie) {
-      var iesound = $('#iesound').get(0);
-      iesound.onended = function() { t.clear(); d.resolve(); };
-      iesound.FileName = streamurl;
-    } else {
-      $('#speakaudio')
-        .attr('src', streamurl)
-        .bind('ended', function() { t.clear(); d.resolve(); })
-        .get(0).play();
-    }
-  }, function(xhr, textStatus, errorThrown) {
-    console.log(textStatus, errorThrown);
-    d.reject();
   });
-  return d.promise();
 }
 
 function detect(text) {
@@ -116,12 +98,12 @@ function detect(text) {
     text: text
   };
   return $.ajax({
-      url: url,
-      data: data,
-      dataType: 'jsonp',
-      jsonp: 'oncomplete',
-      timeout: jsonp_timeout
-    });
+    url: url,
+    data: data,
+    dataType: 'jsonp',
+    jsonp: 'oncomplete',
+    timeout: jsonp_timeout
+  });
 }
 
 function getLanguagesForSpeak() {
@@ -212,6 +194,23 @@ SearchContext.prototype.on_search_fail = function(self, xhr, textStatus, errorTh
   timeout(requestdelay).done(self.search);
 };
 
+function playsound(url) {
+  var d = $.Deferred();
+  var t = timeout(jsonp_timeout);
+  t.done(function() { d.reject(); });
+  if ($.browser.msie) {
+    var iesound = $('#iesound').get(0);
+    iesound.onended = function() { t.clear(); d.resolve(); };
+    iesound.FileName = url;
+  } else {
+    $('#speakaudio')
+      .attr('src', url)
+      .bind('ended', function() { t.clear(); d.resolve(); })
+      .get(0).play();
+  }
+  return d.promise();
+}
+
 function start() {
   var q = $('#q').val(),
       lang = $('#lang').val(),
@@ -226,9 +225,12 @@ function start() {
       if ($.inArray(lang, speak_languages) === -1) {
         lang = speak_default_language;
       }
-      speak(text, lang).then(
-        function() { ctx.next().done(callback); },
-        function() { ctx.next().done(callback); });
+      speak(text, lang).then(function(url) {
+        playsound(url).done(function() { ctx.next().done(callback); });
+      }, function(xhr, textStatus, errorThrown) {
+        console.log(textStatus, errorThrown);
+        ctx.next().done(callback);
+      });
     }, function(xhr, textStatus, errorThrown) {
       console.log(textStatus, errorThrown);
       ctx.next().done(callback);
