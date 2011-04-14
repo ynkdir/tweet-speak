@@ -22,6 +22,10 @@ td, th {
 
 <script>
 
+/*global console Audio $ jQuery*/
+(function() {
+'use strict';
+
 // XXX: Change this variable to your appid.
 // See http://www.bing.com/developers/
 var bing_appid = '7E4F352C80692687D39E6CD42998104C5F79281C';
@@ -139,7 +143,7 @@ function htmlfilter(text) {
 }
 
 var SearchContext = function(q, lang) {
-  var self = selfy(this, SearchContext.prototype);
+  var self = selfy(this, this.constructor.prototype);
   self.q = q;
   self.lang = lang;
   self.since_id = null;
@@ -239,7 +243,7 @@ function start() {
   currentsearch = ctx = new SearchContext(q, lang);
   ctx.next().done(function callback(result) {
     $('#tweettable').prepend(
-      $('#tmpl-tweet-row').tmpl({result: result}));
+      $('#tmpl-tweet-row').tmpl({result: result}, {htmlfilter: htmlfilter}));
     speakready(result.text, lang).then(function(url) {
       playsound(url).then(
         function() { ctx.next().done(callback); },
@@ -292,6 +296,11 @@ jQuery(function($) {
   $('#running').hide();
   running_animation(0);
 });
+
+this.start = start;
+this.stop = stop;
+
+}.call(this));
 
 </script>
 
@@ -355,7 +364,7 @@ document.getElementById('iesound').onended();
     <div class="avatar"><a href="http://twitter.com/${result.from_user}"><img src="${result.profile_image_url}" /></a></div>
   </td>
   <td width="100%">
-    <div class="msg"><a href="http://twitter.com/${result.from_user}">${result.from_user}</a> {{html htmlfilter(result.text)}}</div>
+    <div class="msg"><a href="http://twitter.com/${result.from_user}">${result.from_user}</a> {{html $item.htmlfilter(result.text)}}</div>
   </td>
 </tr>
 </script>
