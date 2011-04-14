@@ -194,6 +194,26 @@ SearchContext.prototype.on_search_fail = function(self, xhr, textStatus, errorTh
   timeout(requestdelay).done(self.search);
 };
 
+function speakready(text, lang) {
+  var d = $.Deferred();
+  text = textfilter(text, lang);
+  detect(text).then(function(lang) {
+    if ($.inArray(lang, speak_languages) === -1) {
+      lang = speak_default_language;
+    }
+    speak(text, lang).then(function(url) {
+      d.resolve(url);
+    }, function(xhr, textStatus, errorThrown) {
+      console.log(textStatus, errorThrown);
+      d.reject();
+    });
+  }, function(xhr, textStatus, errorThrown) {
+    console.log(textStatus, errorThrown);
+    d.reject();
+  });
+  return d.promise();
+}
+
 function playsound(url) {
   var d = $.Deferred();
   var t = timeout(jsonp_timeout);
@@ -220,19 +240,11 @@ function start() {
   ctx.next().done(function callback(result) {
     $('#tweettable').prepend(
       $('#tmpl-tweet-row').tmpl({result: result}));
-    var text = textfilter(result.text, lang);
-    detect(text).then(function(lang) {
-      if ($.inArray(lang, speak_languages) === -1) {
-        lang = speak_default_language;
-      }
-      speak(text, lang).then(function(url) {
-        playsound(url).done(function() { ctx.next().done(callback); });
-      }, function(xhr, textStatus, errorThrown) {
-        console.log(textStatus, errorThrown);
-        ctx.next().done(callback);
-      });
-    }, function(xhr, textStatus, errorThrown) {
-      console.log(textStatus, errorThrown);
+    speakready(result.text, lang).then(function(url) {
+      playsound(url).then(
+        function() { ctx.next().done(callback); },
+        function() { ctx.next().done(callback); });
+    }, function() {
       ctx.next().done(callback);
     });
   });
