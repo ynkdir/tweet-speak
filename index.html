@@ -140,12 +140,12 @@ function getLanguagesForSpeak() {
     appId: bing_appid
   };
   return $.ajax({
-      url: url,
-      data: data,
-      dataType: 'jsonp',
-      jsonp: 'oncomplete',
-      timeout: jsonp_timeout
-    });
+    url: url,
+    data: data,
+    dataType: 'jsonp',
+    jsonp: 'oncomplete',
+    timeout: jsonp_timeout
+  });
 }
 
 // TODO:
