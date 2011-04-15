@@ -66,16 +66,6 @@ var requestdelay = 15000;
 
 var currentsearch = null;
 
-function selfy(self, methods) {
-  var method;
-  for (method in methods) {
-    if (methods.hasOwnProperty(method)) {
-      self[method] = methods[method].bind(self, self);
-    }
-  }
-  return self;
-}
-
 function timeout(msec) {
   var d = $.Deferred();
   var t = setTimeout(function() { d.resolve(); }, msec);
@@ -166,17 +156,18 @@ function htmlfilter(text) {
   return s;
 }
 
-var SearchContext = function(q, lang) {
-  var self = selfy(this, this.constructor.prototype);
+function SearchContext(q, lang) {
+  var self = this;
   self.q = q;
   self.lang = lang;
   self.since_id = null;
   self.i = 0;
   self.results = null;
   self.d = null;
-};
+}
 
-SearchContext.prototype.next = function(self) {
+SearchContext.prototype.next = function() {
+  var self = this;
   self.d = $.Deferred();
   if (self !== currentsearch) {
     return self.d.promise();
@@ -189,13 +180,15 @@ SearchContext.prototype.next = function(self) {
   return self.d.promise();
 };
 
-SearchContext.prototype.search = function(self) {
+SearchContext.prototype.search = function() {
+  var self = this;
   search(self.q, self.lang, self.since_id).then(
-    self.on_search_done,
-    self.on_search_fail);
+    self.on_search_done.bind(self),
+    self.on_search_fail.bind(self));
 };
 
-SearchContext.prototype.on_search_done = function(self, data) {
+SearchContext.prototype.on_search_done = function(data) {
+  var self = this;
   // MEMO: data.refresh_url doesn't contain lang param
   if (self !== currentsearch) {
     return;
@@ -207,7 +200,7 @@ SearchContext.prototype.on_search_done = function(self, data) {
   }
   if (data.results.length === 0) {
     $('#status').text('waiting');
-    timeout(requestdelay).done(self.search);
+    timeout(requestdelay).done(self.search.bind(self));
     return;
   }
   $('#status').text('');
@@ -217,9 +210,10 @@ SearchContext.prototype.on_search_done = function(self, data) {
   self.d.resolve(self.results[self.i++]);
 };
 
-SearchContext.prototype.on_search_fail = function(self, xhr, textStatus, errorThrown) {
+SearchContext.prototype.on_search_fail = function(xhr, textStatus, errorThrown) {
+  var self = this;
   console.log(textStatus, errorThrown);
-  timeout(requestdelay).done(self.search);
+  timeout(requestdelay).done(self.search.bind(self));
 };
 
 function speakready(text, lang) {
